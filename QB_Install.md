@@ -17,12 +17,16 @@ Install git using these instructions: [https://git-scm.com/download/mac](https:/
 
 Download quickBlocks
 
-`git install -b develop http://github.com/Great-Hill-Corporation/quickBlocks`
+`git clone -b develop http://github.com/Great-Hill-Corporation/quickBlocks`
 
 Then
 
-`cd quickBlocks`  
-`mkdir build`  
-`cmake ../src`  
-`make`  
-`sudo make install`  
+```
+cd quickBlocks
+mkdir build
+cd build
+cmake ../src
+make
+sudo make install
+```
+
