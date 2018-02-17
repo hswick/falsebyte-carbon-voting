@@ -11,6 +11,8 @@ matrix:
       before_install: 
       - npm install
       - npm install -g truffle ganache-cli
+      - git clone https://github.com/mrsmkl/aragonOS
+      - npm install ./aragonOS
 
 script: 
 - bash ./travis_test.sh
