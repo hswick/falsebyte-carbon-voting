@@ -19,12 +19,11 @@ contract ElectionSystem {
         uint noVoteTotal;
         bytes32 description;
         ERC20 token;
-        
     }
 
     mapping(bytes32 => Election) elections;
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, bytes32 electionId);
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, bytes32 electionId, ERC20 token);
     event NewVote(bytes32 electionId, address voter, uint balance);
 
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, ERC20 token) public returns (bytes32) {
@@ -40,7 +39,7 @@ contract ElectionSystem {
         election.tallyBlockNumber = tallyBlock;
         election.description = electionDescription;
         election.token = token;
-        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, electionId);
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, electionId, token);
         return electionId;
     }
 
@@ -89,5 +88,7 @@ contract ElectionSystem {
         uint newBalance = el.token.balanceOf(voter);
         if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);
     }
+
+    
 
 }
