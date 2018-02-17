@@ -34,8 +34,8 @@ describe('ElectionSystem', async function () {
       const blockNumber = await web3.eth.getBlockNumber()
       let tx = await electionSystem.initializeElection(blockNumber, blockNumber+100, blockNumber+120, 'eth denver hackers voting', coloradoCoin.address, {from: accounts[0]});
 
-      const result = tx.logs[0].args
-
+      const result = tx.logs[1].args
+      
       electionId = result.electionId
 
       //Doesn't work yet, must be an encoding issue
@@ -49,13 +49,12 @@ describe('ElectionSystem', async function () {
     })
 
     it('sends a vote', async () => {
-
       const tx = await electionSystem.sendVote(electionId, true, {from: accounts[1]});
 
       const result = tx.logs[0].args
-      assert.equal(result.electionId, electionId)
+      assert.equal(result.voteId.toString(), electionId.toString())
       assert.equal(result.voter, accounts[1].toLowerCase())
-      assert.equal(result.balance.toNumber(), 10000)
+      assert.equal(result.stake.toNumber(), 10000)
 
     })
 
@@ -64,9 +63,9 @@ describe('ElectionSystem', async function () {
       let tx = await electionSystem.sendVote(electionId, false, {from: accounts[2]});
 
       const result = tx.logs[0].args
-      assert.equal(result.electionId, electionId)
+      assert.equal(result.voteId.toString(), electionId.toString())
       assert.equal(result.voter, accounts[2].toLowerCase())
-      assert.equal(result.balance.toNumber(), 20000)
+      assert.equal(result.stake.toNumber(), 20000)
 
     })
 
