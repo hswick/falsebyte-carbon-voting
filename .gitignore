@@ -1,6 +1,9 @@
+build
+*~
 node_modules
 */node_modules
 
 installed_contracts
 */installed_contracts
 installed_contracts/*
+
