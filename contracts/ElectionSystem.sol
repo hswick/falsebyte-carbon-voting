@@ -86,7 +86,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         ChangeMinQuorum(_minAcceptQuorumPct);
     }
     
-    function newVote(bytes _executionScript, string _metadata) auth(CREATE_VOTES_ROLE) external returns (uint256 voteId) {
+    function newVote(bytes _executionScript, string _metadata) auth(CREATE_VOTES_ROLE) public returns (uint256 voteId) {
         bytes32 id = initializeElection(block.number, block.number+voteTime, block.number+voteTime+TALLY, 0, token);
         Election storage el = elections[id];
         el.executionScript = _executionScript;
@@ -101,7 +101,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         sendVote(bytes32(_voteId), _supports);
     }
 
-    // event NewElection(bytes32 id, address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description, address token);
+    event NewElection(bytes32 id, address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description, address token);
     
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, address _token) public returns (bytes32) {
         bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, _token);
@@ -116,14 +116,51 @@ contract ElectionSystem is IForwarder, AragonApp {
         election.description = electionDescription;
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
-        // NewElection(id, msg.sender, startBlock, endBlock, tallyBlock, electionDescription, _token);
+        NewElection(id, msg.sender, startBlock, endBlock, tallyBlock, electionDescription, _token);
         StartVote(uint(id));
         return id;
     }
     
-    function canVote(uint256 _voteId, address _voter) public view returns (bool) {
+    function canVote(uint256 _voteId, address /* _voter */ ) public view returns (bool) {
         Election storage el = elections[bytes32(_voteId)];
         return el.votingStartBlockNumber <= block.number && el.votingEndBlockNumber >= block.number;
+    }
+
+    /**
+    * @notice Execute the result of vote `_voteId`
+    * @param _voteId Id for vote
+    */
+    function executeVote(uint256 _voteId) external {
+        require(canExecute(_voteId));
+        _executeVote(_voteId);
+    }
+
+    function isForwarder() public pure returns (bool) {
+        return true;
+    }
+
+    /**
+    * @dev IForwarder interface conformance
+    * @param _evmScript Start vote with script
+    */
+    function forward(bytes _evmScript) public {
+        require(canForward(msg.sender, _evmScript));
+        newVote(_evmScript, "");
+    }
+
+    function canForward(address _sender, bytes /* _evmCallScript */) public view returns (bool) {
+        return canPerform(_sender, CREATE_VOTES_ROLE, arr());
+    }
+    
+    function canExecute(uint256 _voteId) public view returns (bool) {
+        Election storage el = elections[bytes32(_voteId)];
+        if (el.executed) return false;
+        if (block.number < el.tallyBlockNumber) return false;
+        uint totalVoters = el.token.totalSupply();
+        uint totalVotes = el.yesVoteTotal + el.noVoteTotal;
+        bool hasSupport = _isValuePct(el.yesVoteTotal, totalVotes, supportRequiredPct);
+        bool hasMinQuorum = _isValuePct(el.yesVoteTotal, totalVoters, el.minAcceptQuorumPct);
+        return hasSupport && hasMinQuorum;
     }
 
     function sendVote(bytes32 electionId, bool vote) public {
@@ -139,6 +176,17 @@ contract ElectionSystem is IForwarder, AragonApp {
         CastVote(uint(electionId), msg.sender, vote, balance);
     }
 
+    function _executeVote(uint256 _voteId) internal {
+        Election storage vote = elections[bytes32(_voteId)];
+
+        vote.executed = true;
+
+        bytes memory input = new bytes(0);
+        runScript(vote.executionScript, input, new address[](0));
+
+        ExecuteVote(_voteId);
+    }
+    
     // should voter be able to change the vote
 
     function adjustVoteAccordingToDelta(bytes32 id, address voterAddress) internal {
@@ -168,6 +216,20 @@ contract ElectionSystem is IForwarder, AragonApp {
         uint balance = el.votes[a1].balance;
         uint newBalance = el.token.balanceOf(a1);
         if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(id, a1);
+    }
+
+    /**
+    * @dev Calculates whether `_value` is at least a percent `_pct` over `_total`
+    */
+    function _isValuePct(uint256 _value, uint256 _total, uint256 _pct) internal pure returns (bool) {
+        if (_value == 0 && _total > 0)
+            return false;
+
+        uint256 m = _total * _pct;
+        uint256 v = m / PCT_BASE;
+
+        // If division is exact, allow same value, otherwise require value to be greater
+        return m % PCT_BASE == 0 ? _value >= v : _value > v;
     }
 
 }
