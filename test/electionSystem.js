@@ -35,8 +35,6 @@ describe('ElectionSystem', async function () {
 
       const result = tx.logs[1].args
       
-      // console.log(tx.logs)
-
       electionId = result.electionId
 
       //Doesn't work yet, must be an encoding issue
@@ -50,8 +48,6 @@ describe('ElectionSystem', async function () {
     })
 
     it('sends a vote', async () => {
-      // console.log("id", electionId)
-
       const tx = await electionSystem.sendVote(electionId, true, {from: accounts[1]});
 
       const result = tx.logs[0].args
