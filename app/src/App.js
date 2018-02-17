@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './assets/css/bootstrap.min.css';
 import './App.css';
-import ELECTION_SYSTEM from '../../build/contracts/ElectionSystem.js';
+import ELECTION_SYSTEM_ABI from './assets/electionsystem.abi.json';
+import ELECTION_SYSTEM_ADDRESS from './assets/electionsystem.address.json';
 import { AragonApp, Countdown } from '@aragon/ui';
 import { Table, TableHeader, TableRow, TableCell, Text, CircleGraph } from '@aragon/ui'
 
@@ -12,18 +13,21 @@ const endDate = new Date(Date.now() + 5 * DAY_IN_MS);
 class App extends Component {
   
   handleNewElection() {
-    console.log(ELECTION_SYSTEM);
+    let contract = web3.eth.contract(ELECTION_SYSTEM_ABI).at(ELECTION_SYSTEM_ADDRESS.address)
+    console.log(contract);
   }
 
   render() {
+    console.log(ELECTION_SYSTEM_ABI, ELECTION_SYSTEM_ADDRESS);
     return (
       <div className="App container">
         <div className="row">
           <h4>Elections</h4>
           <div className="col-10 float-right">
-            <button className="float-right btn btn-primary">New Election</button>
+            <button className="float-right btn btn-primary" onClick={ this.handleNewElection } >New Election</button>
           </div>
         </div>
+        
         <h3 className="text-center"></h3>
         <Table
           header={
