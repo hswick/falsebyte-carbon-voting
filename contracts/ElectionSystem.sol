@@ -100,10 +100,13 @@ contract ElectionSystem is IForwarder, AragonApp {
         sendVote(bytes32(_voteId), _supports);
     }
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, uint electionId, ERC20 token);
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, uint electionId, ERC20 token);
+    
+    uint uniq;
 
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, address _token) public returns (bytes32) {
-        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
+        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, uniq);
+        uniq++;
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
         require(startBlock >= block.number-1);
@@ -115,7 +118,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
         StartVote(uint(electionId));
-        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, uint(electionId), token);
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, uint(electionId), token);
         return electionId;
     }
     
