@@ -11,7 +11,7 @@ matrix:
       before_install:
       - cd ..
       - git clone  https://github.com/mrsmkl/aragonOS
-      - cd -
+      - cd falsebyte-carbon-voting
       - npm install
       - npm install -g truffle ganache-cli
       - npm install ../aragonOS
