@@ -8,7 +8,7 @@ cd into the repo
 
 ```
 cd falsebyte-carbon-voting
-
+git clone https://github.com/mrsmkl/aragonOS
 npm install
 npm install -g truffle
 ```
