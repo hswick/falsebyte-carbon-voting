@@ -89,6 +89,10 @@ contract ElectionSystem {
         if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);
     }
 
-    
-
+    function getElectionResults(bytes32 electionId) public view returns(uint finalYesVoteTotal, uint finalNoVoteTotal) {
+        Election storage el = elections[electionId];
+        require(block.number > el.tallyBlockNumber);
+        finalYesVoteTotal = el.yesVoteTotal;
+        finalNoVoteTotal = el.noVoteTotal;
+    }
 }
