@@ -45,6 +45,12 @@ contract ElectionSystem is IForwarder, AragonApp {
 
     mapping(bytes32 => Election) elections;
     
+    event CreatedSystem(bytes32 id);
+    
+    function ElectionSystem() public {
+        CreatedSystem(keccak256("eth denver falsebyte"));
+    }
+    
     event StartVote(uint256 indexed voteId);
     event CastVote(uint256 indexed voteId, address indexed voter, bool supports, uint256 stake);
     event ExecuteVote(uint256 indexed voteId);
