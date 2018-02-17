@@ -8,8 +8,6 @@ var host = "localhost"
 
 var config = JSON.parse(fs.readFileSync(dir + "ElectionSystem.json"))
 
-// args: address that has changed
-// web3.setProvider(new web3.providers.WebsocketProvider('ws://' + host + ':8546'))
 web3.setProvider(new web3.providers.HttpProvider('http://' + host + ':8545'))
 
 function findAddress(blah) {
@@ -27,5 +25,6 @@ async function update(voteid, address) {
     vote.methods.changeBalance(voteid, web3.utils.toChecksumAddress(address)).send(send_opt)
 }
 
+// args: vote id, address that has changed
 update(process.argv[2], process.argv[3])
 
