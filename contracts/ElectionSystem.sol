@@ -24,10 +24,10 @@ contract ElectionSystem {
 
     mapping(bytes32 => Election) elections;
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description);
+    event NewElection(bytes32 id, address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description, address token);
 
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, address token) public returns (bytes32) {
-        bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
+        bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, token);
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
         require(startBlock > block.number);
@@ -38,6 +38,7 @@ contract ElectionSystem {
         election.tallyBlockNumber = tallyBlock;
         election.description = electionDescription;
         election.token = ERC20(token);
+        NewElection(id, msg.sender, startBlock, endBlock, tallyBlock, electionDescription, token);
         return id;
     }
 
