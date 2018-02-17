@@ -20,10 +20,9 @@
   },
   "homepage": "https://github.com/hswick/falsebyte-carbon-voting#readme",
   "dependencies": {
-    "@aragon/os": "^3.0.3",
     "web3": "^1.0.0-beta.30"
   },
   "devDependencies": {
-    "@aragon/os": "file:aragonOS"
+    "@aragon/os": "../aragonOS"
   }
 }
