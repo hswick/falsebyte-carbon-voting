@@ -9,17 +9,10 @@ describe('ElectionSystem', async function () {
 
   let electionSystem, accounts, electionId
 
-  async function timeout(milliseconds) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve()
-      }, milliseconds)
-    })
-  }
-
   before(async () => {
-    electionSystem = await ElectionSystem.new()
-    coloradoCoin = await ColoradoCoin.new()
+
+    electionSystem = await ElectionSystem.at(ElectionSystem.address)
+    coloradoCoin = await ColoradoCoin.at(ColoradoCoin.address)
 
     accounts = await web3.eth.getAccounts()
 
@@ -37,15 +30,6 @@ describe('ElectionSystem', async function () {
       const result = tx.logs[1].args
       
       electionId = result.electionId
-
-      //Doesn't work yet, must be an encoding issue
-      // assert.equal(electionId, web3.utils.keccak256(
-      //   result.creator,
-      //   result.startBlock.toNumber(),
-      //   result.endBlock.toNumber(),
-      //   result.tallyBlock.toNumber(),
-      //   result.electionDescription
-      // ))
     })
 
     it('sends a vote', async () => {
