@@ -84,6 +84,7 @@ contract ElectionSystem {
     
     function changeBalance(bytes32 electionId, address voter) public {
         Election storage el = elections[electionId];
+        require(block.number < el.tallyBlockNumber);
         uint balance = el.votes[voter].balance;
         uint newBalance = el.token.balanceOf(voter);
         if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);

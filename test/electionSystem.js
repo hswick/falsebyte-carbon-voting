@@ -2,6 +2,7 @@ const ElectionSystem = artifacts.require('./ElectionSystem.sol')
 const ColoradoCoin = artifacts.require('./ColoradoCoin.sol')
 const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
+const mineBlocks = require('./helpers/mineBlocks')(web3)
 
 describe('ElectionSystem', async function () {
   this.timeout(120000)
@@ -67,6 +68,31 @@ describe('ElectionSystem', async function () {
       assert.equal(result.voter, accounts[2].toLowerCase())
       assert.equal(result.balance.toNumber(), 20000)
 
+    })
+
+    it('change voter balance', async () => {
+      const tx = await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
+
+      const result = tx.logs[0].args
+
+      await electionSystem.changeBalance(electionId, result._to, {from: accounts[3]})
+    })
+
+    it('change voter balance again', async () => {
+      const tx = await coloradoCoin.transfer(accounts[0], 10000, {from: accounts[1]})
+
+      const result = tx.logs[0].args
+
+      await electionSystem.changeBalance(electionId, result._from, {from: accounts[3]})
+    })
+
+    it('get final election results', async () => {
+
+      await mineBlocks(120)
+
+      const electionResults = await electionSystem.getElectionResults(electionId)
+      assert.equal(electionResults[0].toNumber(), 10000)
+      assert.equal(electionResults[1].toNumber(), 20000)
     })
   })
 })
