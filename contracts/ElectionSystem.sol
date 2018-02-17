@@ -24,23 +24,24 @@ contract ElectionSystem {
 
     mapping(bytes32 => Election) elections;
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description);
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, bytes32 electionId);
+    event NewVote(bytes32 electionId, address voter, uint balance);
 
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, ERC20 token) public returns (bytes32) {
         require(tallyBlock > endBlock);
-        bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
+        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
         require(startBlock >= block.number-1);
-        Election storage election = elections[id];
+        Election storage election = elections[electionId];
         require (election.tallyBlockNumber == 0);
         election.votingStartBlockNumber = startBlock;
         election.votingEndBlockNumber = endBlock;
         election.tallyBlockNumber = tallyBlock;
         election.description = electionDescription;
         election.token = token;
-        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
-        return id;
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, electionId);
+        return electionId;
     }
 
     function sendVote(bytes32 electionId, bool vote) public {
@@ -48,11 +49,16 @@ contract ElectionSystem {
         require(el.votingStartBlockNumber <= block.number);
         require(el.votingEndBlockNumber >= block.number);
         require(el.votes[msg.sender].balance == 0);
-        uint balance = el.token.balanceOf(msg.sender);
+        uint256 balance = el.token.balanceOf(msg.sender);
         require(balance > 0);
         el.votes[msg.sender] = Vote(balance, vote);
-        if (vote) el.yesVoteTotal += balance;
-        else el.noVoteTotal += balance;
+        if (vote) {
+            el.yesVoteTotal += balance;
+        }
+        else {
+            el.noVoteTotal += balance;
+        }
+        NewVote(electionId, msg.sender, balance);
     }
 
     // should voter be able to change the vote
