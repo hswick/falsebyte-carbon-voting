@@ -77,7 +77,6 @@ contract ElectionSystem {
     
     // 
 
-    // hmm we cannot assume that we can connect the two changes
     function changeBalance(bytes32 id, address a1) public {
         Election storage el = elections[id];
         uint balance = el.votes[a1].balance;
