@@ -1,4 +1,16 @@
+const defaultConfig = {
+  // eslint-disable-next-line camelcase
+  network_id: '*',
+  gas: 5000000,
+  gasPrice: 4000000000, // gwei
+}
+
 module.exports = {
-  // See <http://truffleframework.com/docs/advanced/configuration>
-  // to customize your Truffle configuration!
-};
+  networks: {
+    development: {
+      host: 'localhost',
+      port: 8545,
+      ...defaultConfig,
+    }
+  }
+}
