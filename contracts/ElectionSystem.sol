@@ -26,7 +26,7 @@ contract ElectionSystem {
 
     event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description);
 
-    function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, address token) public returns (bytes32) {
+    function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, ERC20 token) public returns (bytes32) {
         bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
@@ -37,7 +37,7 @@ contract ElectionSystem {
         election.votingEndBlockNumber = endBlock;
         election.tallyBlockNumber = tallyBlock;
         election.description = electionDescription;
-        election.token = ERC20(token);
+        election.token = token;
         return id;
     }
 
@@ -55,11 +55,11 @@ contract ElectionSystem {
 
     // should voter be able to change the vote
 
-    function adjustVoteAccordingToDelta(bytes32 id, address voterAddress) internal {
-        Election storage el = elections[id];
-        bool vote = el.votes[voterAddress].vote;
-        uint oldBalance = el.votes[voterAddress].balance;
-        uint newBalance = el.token.balanceOf(voterAddress);
+    function adjustVoteAccordingToDelta(bytes32 electionId, address voter) internal {
+        Election storage el = elections[electionId];
+        bool vote = el.votes[voter].vote;
+        uint oldBalance = el.votes[voter].balance;
+        uint newBalance = el.token.balanceOf(voter);
         require(oldBalance != newBalance);
 
         if (newBalance > oldBalance) {
@@ -72,17 +72,14 @@ contract ElectionSystem {
             if (vote) el.yesVoteTotal -= (oldBalance - newBalance);
             else el.noVoteTotal -= (oldBalance - newBalance);
         }
-        el.votes[voterAddress].balance = newBalance;
+        el.votes[voter].balance = newBalance;
     }
     
-    // 
-
-    // hmm we cannot assume that we can connect the two changes
-    function changeBalance(bytes32 id, address a1) public {
-        Election storage el = elections[id];
-        uint balance = el.votes[a1].balance;
-        uint newBalance = el.token.balanceOf(a1);
-        if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(id, a1);
+    function changeBalance(bytes32 electionId, address voter) public {
+        Election storage el = elections[electionId];
+        uint balance = el.votes[voter].balance;
+        uint newBalance = el.token.balanceOf(voter);
+        if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);
     }
 
 }
