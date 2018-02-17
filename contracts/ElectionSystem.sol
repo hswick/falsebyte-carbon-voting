@@ -101,14 +101,14 @@ contract ElectionSystem is IForwarder, AragonApp {
         sendVote(bytes32(_voteId), _supports);
     }
 
-    event NewElection(bytes32 id, address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 description, address token);
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, bytes32 electionId, ERC20 token);
     
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, address _token) public returns (bytes32) {
-        bytes32 id = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, _token);
+        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
-        require(startBlock > block.number);
-        Election storage election = elections[id];
+        require(startBlock >= block.number-1);
+        Election storage election = elections[electionId];
         require (election.tallyBlockNumber == 0);
         election.votingStartBlockNumber = startBlock;
         election.votingEndBlockNumber = endBlock;
@@ -116,9 +116,9 @@ contract ElectionSystem is IForwarder, AragonApp {
         election.description = electionDescription;
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
-        NewElection(id, msg.sender, startBlock, endBlock, tallyBlock, electionDescription, _token);
-        StartVote(uint(id));
-        return id;
+        StartVote(uint(electionId));
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, electionId, token);
+        return electionId;
     }
     
     function canVote(uint256 _voteId, address /* _voter */ ) public view returns (bool) {
@@ -168,7 +168,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         require(el.votingStartBlockNumber <= block.number);
         require(el.votingEndBlockNumber >= block.number);
         require(el.votes[msg.sender].balance == 0);
-        uint balance = el.token.balanceOf(msg.sender);
+        uint256 balance = el.token.balanceOf(msg.sender);
         require(balance > 0);
         el.votes[msg.sender] = Vote(balance, vote);
         if (vote) el.yesVoteTotal += balance;
@@ -189,11 +189,11 @@ contract ElectionSystem is IForwarder, AragonApp {
     
     // should voter be able to change the vote
 
-    function adjustVoteAccordingToDelta(bytes32 id, address voterAddress) internal {
-        Election storage el = elections[id];
-        bool vote = el.votes[voterAddress].vote;
-        uint oldBalance = el.votes[voterAddress].balance;
-        uint newBalance = el.token.balanceOf(voterAddress);
+    function adjustVoteAccordingToDelta(bytes32 electionId, address voter) internal {
+        Election storage el = elections[electionId];
+        bool vote = el.votes[voter].vote;
+        uint oldBalance = el.votes[voter].balance;
+        uint newBalance = el.token.balanceOf(voter);
         require(oldBalance != newBalance);
 
         if (newBalance > oldBalance) {
@@ -206,16 +206,14 @@ contract ElectionSystem is IForwarder, AragonApp {
             if (vote) el.yesVoteTotal -= (oldBalance - newBalance);
             else el.noVoteTotal -= (oldBalance - newBalance);
         }
-        el.votes[voterAddress].balance = newBalance;
+        el.votes[voter].balance = newBalance;
     }
     
-    // 
-
-    function changeBalance(bytes32 id, address a1) public {
-        Election storage el = elections[id];
-        uint balance = el.votes[a1].balance;
-        uint newBalance = el.token.balanceOf(a1);
-        if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(id, a1);
+    function changeBalance(bytes32 electionId, address voter) public {
+        Election storage el = elections[electionId];
+        uint balance = el.votes[voter].balance;
+        uint newBalance = el.token.balanceOf(voter);
+        if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);
     }
 
     /**
@@ -233,4 +231,3 @@ contract ElectionSystem is IForwarder, AragonApp {
     }
 
 }
-
