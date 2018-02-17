@@ -45,12 +45,6 @@ contract ElectionSystem is IForwarder, AragonApp {
 
     mapping(bytes32 => Election) elections;
     
-    event CreatedSystem(bytes32 id);
-    
-    function ElectionSystem() public {
-        CreatedSystem(keccak256("eth denver falsebyte"));
-    }
-    
     event StartVote(uint256 indexed voteId);
     event CastVote(uint256 indexed voteId, address indexed voter, bool supports, uint256 stake);
     event ExecuteVote(uint256 indexed voteId);
@@ -106,7 +100,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         sendVote(bytes32(_voteId), _supports);
     }
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, uint electionId, ERC20 token);
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, uint electionId, ERC20 token);
 
     function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, address _token) public returns (bytes32) {
         bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
@@ -121,7 +115,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
         StartVote(uint(electionId));
-        NewElection(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, uint(electionId), token);
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, uint(electionId), token);
         return electionId;
     }
     

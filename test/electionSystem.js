@@ -82,6 +82,8 @@ describe('ElectionSystem', async function () {
 
       const result = tx.logs[0].args
 
+      // var str = electionSystem.contract.changeBalance.getData(electionId, result._from, {from: accounts[3]})
+      // console.log(str)
       await electionSystem.changeBalance(electionId, result._from, {from: accounts[3]})
     })
 
