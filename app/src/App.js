@@ -13,7 +13,7 @@ const endDate = new Date(Date.now() + 5 * DAY_IN_MS);
 class App extends Component {
   
   handleNewElection() {
-    let contract = web3.eth.contract(ELECTION_SYSTEM_ABI).at(ELECTION_SYSTEM_ADDRESS.address)
+    let contract = window.web3.eth.contract(ELECTION_SYSTEM_ABI).at(ELECTION_SYSTEM_ADDRESS.address)
     console.log(contract);
   }
 
