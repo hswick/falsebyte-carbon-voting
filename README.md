@@ -11,7 +11,6 @@ cd falsebyte-carbon-voting
 
 npm install
 npm install -g truffle
-truffle install token
 ```
 
 Install test net:
