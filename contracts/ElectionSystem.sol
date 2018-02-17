@@ -33,7 +33,6 @@ contract ElectionSystem is IForwarder, AragonApp {
         
         uint yesVoteTotal;
         uint noVoteTotal;
-        bytes32 description;
         ERC20 token;
         
         string metadata;
@@ -87,7 +86,7 @@ contract ElectionSystem is IForwarder, AragonApp {
     }
     
     function newVote(bytes _executionScript, string _metadata) auth(CREATE_VOTES_ROLE) public returns (uint256 voteId) {
-        bytes32 id = initializeElection(block.number, block.number+voteTime, block.number+voteTime+TALLY, 0, token);
+        bytes32 id = initializeElection(block.number, block.number+voteTime, block.number+voteTime+TALLY, _executionScript, token);
         Election storage el = elections[id];
         el.executionScript = _executionScript;
         el.metadata = _metadata;
@@ -101,9 +100,9 @@ contract ElectionSystem is IForwarder, AragonApp {
         sendVote(bytes32(_voteId), _supports);
     }
 
-    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, uint electionId, ERC20 token);
-    
-    function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes32 electionDescription, address _token) public returns (bytes32) {
+    event NewElection(address creator, uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, uint electionId, ERC20 token);
+
+    function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, address _token) public returns (bytes32) {
         bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription);
         require(endBlock > startBlock);
         require(tallyBlock > endBlock);
@@ -113,7 +112,6 @@ contract ElectionSystem is IForwarder, AragonApp {
         election.votingStartBlockNumber = startBlock;
         election.votingEndBlockNumber = endBlock;
         election.tallyBlockNumber = tallyBlock;
-        election.description = electionDescription;
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
         StartVote(uint(electionId));
