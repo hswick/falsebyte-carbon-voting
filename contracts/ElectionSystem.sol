@@ -209,6 +209,7 @@ contract ElectionSystem is IForwarder, AragonApp {
     
     function changeBalance(bytes32 electionId, address voter) public {
         Election storage el = elections[electionId];
+        require(block.number < el.tallyBlockNumber);
         uint balance = el.votes[voter].balance;
         uint newBalance = el.token.balanceOf(voter);
         if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(electionId, voter);
@@ -228,4 +229,10 @@ contract ElectionSystem is IForwarder, AragonApp {
         return m % PCT_BASE == 0 ? _value >= v : _value > v;
     }
 
+    function getElectionResults(bytes32 electionId) public view returns(uint finalYesVoteTotal, uint finalNoVoteTotal) {
+        Election storage el = elections[electionId];
+        require(block.number > el.tallyBlockNumber);
+        finalYesVoteTotal = el.yesVoteTotal;
+        finalNoVoteTotal = el.noVoteTotal;
+    }
 }
