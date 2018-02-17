@@ -1,0 +1,25 @@
+{
+  "name": "falsebyte-carbon-voting",
+  "version": "1.0.0",
+  "description": "falsebyte implementation for carbon onchain voting",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hswick/falsebyte-carbon-voting.git"
+  },
+  "keywords": [
+    "voting"
+  ],
+  "author": "hswick and friends",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hswick/falsebyte-carbon-voting/issues"
+  },
+  "homepage": "https://github.com/hswick/falsebyte-carbon-voting#readme",
+  "dependencies": {
+    "web3": "^1.0.0-beta.30"
+  }
+}
