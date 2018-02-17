@@ -22,3 +22,14 @@ Run your test net:
 ```
 ganache-cli
 ```
+
+Install modified aragonOS
+```
+git clone git@github.com:mrsmkl/aragonOS.git
+
+cd aragonOS
+npm install
+
+cd ..
+npm i --save-dev @aragon/os
+```
