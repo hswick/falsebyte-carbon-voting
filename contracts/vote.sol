@@ -15,8 +15,8 @@ contract ElectionSystem {
         uint votingEndBlockNumber;
         uint tallyBlockNumber;
         
-        int yesVoteTotal;
-        int noVoteTotal;
+        uint yesVoteTotal;
+        uint noVoteTotal;
         bytes32 description;
         ERC20 token;
         
@@ -49,8 +49,8 @@ contract ElectionSystem {
         uint balance = el.token.balanceOf(msg.sender);
         require(balance > 0);
         el.votes[msg.sender] = Vote(balance, vote);
-        if (vote) el.yesVoteTotal += int(balance);
-        else el.noVoteTotal += int(balance);
+        if (vote) el.yesVoteTotal += balance;
+        else el.noVoteTotal += balance;
     }
 
     // should voter be able to change the vote
@@ -61,27 +61,28 @@ contract ElectionSystem {
         uint oldBalance = el.votes[voterAddress].balance;
         uint newBalance = el.token.balanceOf(voterAddress);
         require(oldBalance != newBalance);
-        int delta = int(newBalance) - int(oldBalance);
-        // Adjust vote according to delta sign and vote
-        if (vote) {
-            el.yesVoteTotal += delta;
-            el.noVoteTotal -= delta;
+
+        if (newBalance > oldBalance) {
+            if (block.number < el.votingEndBlockNumber) {
+                if (vote) el.yesVoteTotal += (newBalance - oldBalance);
+                else el.noVoteTotal += (newBalance - oldBalance);
+            }
         }
         else {
-            el.yesVoteTotal -= delta;
-            el.noVoteTotal += delta;
+            if (vote) el.yesVoteTotal -= (oldBalance - newBalance);
+            else el.noVoteTotal -= (oldBalance - newBalance);
         }
         el.votes[voterAddress].balance = newBalance;
     }
+    
+    // 
 
-    function changeBalance(bytes32 id, address a1, address a2) public {
+    // hmm we cannot assume that we can connect the two changes
+    function changeBalance(bytes32 id, address a1) public {
         Election storage el = elections[id];
-        uint balance1 = el.votes[a1].balance;
-        uint newBalance1 = el.token.balanceOf(a1);
-        uint balance2 = el.votes[a2].balance;
-        uint newBalance2 = el.token.balanceOf(a2);
-        if (balance1 != newBalance1 && balance1 > 0) adjustVoteAccordingToDelta(id, a1);
-        if (balance2 != newBalance2 && balance2 > 0) adjustVoteAccordingToDelta(id, a2);
+        uint balance = el.votes[a1].balance;
+        uint newBalance = el.token.balanceOf(a1);
+        if (balance != newBalance && balance > 0) adjustVoteAccordingToDelta(id, a1);
     }
 
 }
