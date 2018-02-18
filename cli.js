@@ -11,19 +11,14 @@ let coloradoCoin = ColoradoCoin.at(ColoradoCoin.address)
 
 const mineBlocks = require('./test/helpers/mineBlocks')(web3)
 
+const monitoringAgent = require('./agent')()
+
 const main = async () => {
   const accounts = await web3.eth.getAccounts()
 
   program
   .version('0.0.1')
   .description("CLI for FalseByte Carbon Voting")
-
-  program
-    .command('foo')
-    .description('Testing out commander')
-    .action(async function() {
-      console.log('foobar')
-    })
   
   program
     .command('election [description] [numBlocks]')
@@ -45,6 +40,14 @@ const main = async () => {
     })
 
   program
+    .command('transfer-from [from] [to] [value]')
+    .description('Transfer [value] tokens from [from] to [to]')
+    .action(async function(from, to, value) {
+      console.log("Transferring " + value + " tokens from " + from + " to " + to)
+      await coloradoCoin.transfer(accounts[to], value, {from: accounts[from]})
+    })
+
+  program
   .command('balance [accountNumber')
   .description('Get balance of account')
   .action(async function(accountNumber) {
@@ -56,8 +59,8 @@ const main = async () => {
     .command('vote [electionID] [voteBool] [accountNumber]')
     .description('Send vote to election')
     .action(async function (electionID, voteBool, accountNumber) {
-      const account = accounts[accountNumber]
-      await electionSystem.sendVote(web3.utils.toBN(electionID).toString(), voteBool, {from: account})
+      const account = accounts[parseInt(accountNumber)]
+      await electionSystem.sendVote(web3.utils.toBN(electionID).toString(), (voteBool == 'true'), {from: account})
       console.log("Sent vote " + voteBool + " from " + account)
     })
 
@@ -76,6 +79,21 @@ const main = async () => {
     .action(async function(electionID) {
       const results = await electionSystem.getElectionResults.call(web3.utils.toBN(electionID).toString())
       console.log("Final yes vote total: " + results[0].toNumber() + " Final no vote total: " + results[1].toNumber())
+    })
+
+  program
+    .command('monitor [electionID]')
+    .description('monitor a particular election')
+    .action(async function(electionID) {
+      console.log('Monitoring Election: ' + electionID)
+      let [monitorPromise, stopper] = monitoringAgent({
+        electionId: web3.utils.toBN(electionID).toString(),
+        electionSystem: electionSystem,
+        erc20: coloradoCoin,
+        monitoringAccount: accounts[0]
+      })
+
+      await monitorPromise
     })
   
   program.parse(['/usr/local/bin/node', 'cli.js'].concat(process.argv.slice(4)))
