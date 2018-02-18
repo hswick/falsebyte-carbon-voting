@@ -25,7 +25,6 @@ describe('ElectionSystem', async function () {
     kernel = await Kernel.new();
     acl = await ACL.new();
     daoFact = await DAOFactory.new(kernel.address, acl.address, regFact.address);
-    electionSystem = await ElectionSystem.at(ElectionSystem.address)
     coloradoCoin = await ColoradoCoin.at(ColoradoCoin.address)
 
     accounts = await web3.eth.getAccounts()
@@ -33,19 +32,15 @@ describe('ElectionSystem', async function () {
     //send colorado coins to accounts
     await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
     await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
-  })
 
-  beforeEach(async () => {
     const r = await daoFact.newDAO(accounts[0])
     const dao = Kernel.at(r.logs.filter(l => l.event == 'DeployDAO')[0].args.dao)
-    const acl = ACL.at(await dao.acl())
-    await acl.createPermission(accounts[0], dao.address, await dao.APP_MANAGER_ROLE(), accounts[0], { from: accounts[0] })
+    acl = ACL.at(await dao.acl())
+    
     const receipt = await dao.newAppInstance('0x1234', (await ElectionSystem.new()).address, { from: accounts[0] })
-    app = ElectionSystem.at(receipt.logs.filter(l => l.event == 'NewAppProxy')[0].args.proxy)
-
-    await acl.createPermission(ANY_ADDR, app.address, await app.CREATE_VOTES_ROLE(), accounts[0], { from: accounts[0] })
-    await acl.createPermission(ANY_ADDR, app.address, await app.MODIFY_QUORUM_ROLE(), accounts[0], { from: accounts[0] })
-  })
+   
+    electionSystem = ElectionSystem.at(receipt.logs.filter(l => l.event == 'NewAppProxy')[0].args.proxy)
+ })
 
   context('Test election system functionality', () => {
 
