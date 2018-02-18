@@ -11,6 +11,8 @@ describe('ElectionSystem', async function () {
 
   before(async () => {
 
+    console.log("Addresses", ElectionSystem.address, ColoradoCoin.address)
+    
     electionSystem = await ElectionSystem.at(ElectionSystem.address)
     coloradoCoin = await ColoradoCoin.at(ColoradoCoin.address)
 
@@ -19,16 +21,20 @@ describe('ElectionSystem', async function () {
     //send colorado coins to accounts
     await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
     await coloradoCoin.transfer(accounts[2], 20000, {from: accounts[0]})
+    console.log("here")
+    
+    
   })
 
   context('Test election system functionality', () => {
 
     it('initializes new election', async () => {
       const blockNumber = await web3.eth.getBlockNumber()
+      console.log("coin address", coloradoCoin.address)
       let tx = await electionSystem.initializeElection(blockNumber, blockNumber+100, blockNumber+120, 'eth denver hackers voting', coloradoCoin.address, {from: accounts[0]});
 
       const result = tx.logs[1].args
-      
+
       electionId = result.electionId
     })
 
