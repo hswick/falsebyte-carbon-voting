@@ -3,6 +3,7 @@ build
 node_modules
 */node_modules
 aragonOS
+aragon
 installed_contracts
 */installed_contracts
 installed_contracts/*
