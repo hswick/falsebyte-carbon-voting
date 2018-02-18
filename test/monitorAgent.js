@@ -3,6 +3,7 @@ const ColoradoCoin = artifacts.require('./ColoradoCoin.sol')
 const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
+const monitoringAgent = require('../agent')()
 
 describe('MonitoringAgent', async function () {
   this.timeout(120000)
@@ -31,6 +32,13 @@ describe('MonitoringAgent', async function () {
       console.log(result)
       
       electionId = result.electionId
+
+      monitoringAgent({
+        electionSystem: electionSystem, 
+        erc20: coloradoCoin, 
+        electionId: electionId,
+        monitoringAccount: accounts[0]
+      })
     })
 
     it('sends a vote', async () => {
@@ -54,21 +62,17 @@ describe('MonitoringAgent', async function () {
 
     it('change voter balance', async () => {
       const tx = await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
-
-      const result = tx.logs[0].args
-
-      //await electionSystem.changeBalance(electionId, result._to, {from: accounts[3]})
     })
 
     it('change voter balance again', async () => {
       const tx = await coloradoCoin.transfer(accounts[0], 10000, {from: accounts[1]})
-
-      const result = tx.logs[0].args
-
-      //await electionSystem.changeBalance(electionId, result._from, {from: accounts[3]})
     })
 
     it('get final election results', async () => {
+
+      await new Promise((resolve, reject) => {
+        setTimeout(() => { resolve()}, 3000)
+      })
 
       await mineBlocks(120)
 
