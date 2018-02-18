@@ -8,7 +8,9 @@ module.exports = () => {
         castVoteEvent = config.electionSystem.CastVote({electionId: config.electionId})
         castVoteEvent.watch(async (err, result) => {
           if(result) {
-            voters[result.args.voter] = result.args.stake.toNumber()
+            const stake = result.args.stake.toNumber()
+            voters[result.args.voter] = stake
+            console.log("Vote sent from: " + result.args.voter + " for " + stake + " tokens")
           }
         })
   
@@ -17,6 +19,8 @@ module.exports = () => {
           if(result) {
             const from = result.args._from;
             const to = result.args._to;
+
+            console.log('Transfer sent from ' + from + ' to ' + to)
   
             if(from in voters) {
               await config.electionSystem.changeBalance(config.electionId, from, {from: config.monitoringAccount})
