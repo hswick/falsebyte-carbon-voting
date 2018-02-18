@@ -37,16 +37,19 @@ npm i --save-dev @aragon/os
 
 ```
 git clone http://github.com/aragon/aragon
+npm i
 ```
 
 ### Running Frontend
 ```
 cd aragon
+npm i
 npm start
 ```
 aragon should be running on port 3000
 ```
 cd app
+npm i
 npm start
 ```
 app should run on port 3001
