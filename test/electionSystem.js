@@ -13,7 +13,7 @@ const ANY_ADDR = '0xffffffffffffffffffffffffffffffffffffffff'
 
 describe('ElectionSystem', async function () {
   this.timeout(120000)
-
+  
   let electionSystem, accounts, electionId
 
   let daoFact, kernal, acl, app, token, executionTarget = {}

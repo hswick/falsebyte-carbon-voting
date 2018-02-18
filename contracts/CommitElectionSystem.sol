@@ -9,26 +9,27 @@ import "@aragon/os/contracts/common/IForwarder.sol";
 import "@aragon/os/contracts/lib/zeppelin/math/SafeMath.sol";
 import "@aragon/os/contracts/lib/misc/Migrations.sol";
 
-
-contract ElectionSystem is IForwarder, AragonApp {
+contract CommitElectionSystem is IForwarder, AragonApp {
 
     uint256 constant public PCT_BASE = 10 ** 18;
 
     bytes32 constant public CREATE_VOTES_ROLE = keccak256("CREATE_VOTES_ROLE");
     bytes32 constant public MODIFY_QUORUM_ROLE = keccak256("MODIFY_QUORUM_ROLE");
     
-    uint constant TALLY = 5;
+    uint constant TALLY_PERIOD = 20; // reveal and tally the votes
+    uint constant REVEAL_PERIOD = 5; // cooldown before reveal
     
     struct Vote {
 	    // address voter;
 	    uint balance;
-	    bool vote;
+	    bytes32 vote;
     }
 
     struct Election {
         mapping(address => Vote) votes;
         uint votingStartBlockNumber;
         uint votingEndBlockNumber;
+        uint revealBlockNumber;
         uint tallyBlockNumber;
         
         uint yesVoteTotal;
@@ -47,6 +48,7 @@ contract ElectionSystem is IForwarder, AragonApp {
     
     event StartVote(uint256 indexed voteId);
     event CastVote(uint256 indexed voteId, address indexed voter, bool supports, uint256 stake);
+    event CommitVote(uint256 indexed voteId, address indexed voter, bytes32 supports, uint256 stake);
     event ExecuteVote(uint256 indexed voteId);
     event ChangeMinQuorum(uint256 minAcceptQuorumPct);
 
@@ -86,7 +88,7 @@ contract ElectionSystem is IForwarder, AragonApp {
     }
     
     function newVote(bytes _executionScript, string _metadata) auth(CREATE_VOTES_ROLE) public returns (uint256 voteId) {
-        bytes32 id = initializeElection(block.number, block.number+voteTime, block.number+voteTime+TALLY, _executionScript, token);
+        bytes32 id = initializeElection(block.number, block.number+voteTime, block.number+voteTime+REVEAL_PERIOD, block.number+voteTime+TALLY_PERIOD+REVEAL_PERIOD, _executionScript, token);
         Election storage el = elections[id];
         el.executionScript = _executionScript;
         el.metadata = _metadata;
@@ -95,7 +97,8 @@ contract ElectionSystem is IForwarder, AragonApp {
     }
     
     // will only be decided after tallying ends
-    function vote(uint256 _voteId, bool _supports, bool /* _executesIfDecided */) external {
+    function vote(uint256 _voteId, bytes32 _supports, bool /* _executesIfDecided */) external {
+        require(canVote(_voteId, msg.sender));
         sendVote(bytes32(_voteId), _supports);
     }
 
@@ -103,21 +106,23 @@ contract ElectionSystem is IForwarder, AragonApp {
     
     uint uniq;
 
-    function initializeElection(uint startBlock, uint endBlock, uint tallyBlock, bytes electionDescription, address _token) public returns (bytes32) {
-        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, tallyBlock, electionDescription, uniq);
+    function initializeElection(uint startBlock, uint endBlock, uint revealBlock, uint tallyBlock, bytes electionDescription, address _token) public returns (bytes32) {
+        bytes32 electionId = keccak256(msg.sender, startBlock, endBlock, revealBlock, tallyBlock, electionDescription, uniq);
         uniq++;
         require(endBlock > startBlock);
-        require(tallyBlock > endBlock);
+        require(revealBlock > endBlock);
+        require(tallyBlock > revealBlock);
         require(startBlock >= block.number-1);
         Election storage election = elections[electionId];
         require (election.tallyBlockNumber == 0);
         election.votingStartBlockNumber = startBlock;
         election.votingEndBlockNumber = endBlock;
         election.tallyBlockNumber = tallyBlock;
+        election.revealBlockNumber = revealBlock;
         election.minAcceptQuorumPct = minAcceptQuorumPct;
         election.token = ERC20(_token);
         StartVote(uint(electionId));
-        NewElection(msg.sender, startBlock, endBlock, tallyBlock, uint(electionId), ERC20(_token));
+        NewElection(msg.sender, startBlock, endBlock, tallyBlock, uint(electionId), token);
         return electionId;
     }
     
@@ -163,8 +168,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         return hasSupport && hasMinQuorum;
     }
 
-    function sendVote(bytes32 electionId, bool vote) public {
-        require(canVote(uint(electionId), msg.sender));
+    function sendVote(bytes32 electionId, bytes32 vote) public {
         Election storage el = elections[electionId];
         require(el.votingStartBlockNumber <= block.number);
         require(el.votingEndBlockNumber >= block.number);
@@ -173,9 +177,32 @@ contract ElectionSystem is IForwarder, AragonApp {
         // uint256 balance = 0;
         require(balance > 0);
         el.votes[msg.sender] = Vote(balance, vote);
+        CommitVote(uint(electionId), msg.sender, vote, balance);
+    }
+    
+    function revealVote(uint electionId, bool vote, bytes32 secret) public {
+        Election storage el = elections[bytes32(electionId)];
+        require(el.revealBlockNumber <= block.number);
+        require(el.tallyBlockNumber >= block.number);
+        require(el.votes[msg.sender].vote == keccak256(vote, secret));
+        
+        uint balance = el.votes[msg.sender].balance;
         if (vote) el.yesVoteTotal += balance;
         else el.noVoteTotal += balance;
         CastVote(uint(electionId), msg.sender, vote, balance);
+    }
+
+    function checkVote(bool vote, bytes32 secret) public returns (bytes32) {
+        return keccak256(vote, secret);
+    }
+
+    function slashVote(uint electionId, address voter, bool vote, bytes32 secret) public {
+        Election storage el = elections[bytes32(electionId)];
+        require(el.revealBlockNumber >= block.number);
+        require(el.votingStartBlockNumber <= block.number);
+        require(el.votes[voter].vote == keccak256(vote, secret));
+        
+        el.votes[voter].balance = 0;
     }
 
     function _executeVote(uint256 _voteId) internal {
@@ -193,22 +220,18 @@ contract ElectionSystem is IForwarder, AragonApp {
 
     function adjustVoteAccordingToDelta(bytes32 electionId, address voter) internal {
         Election storage el = elections[electionId];
-        bool vote = el.votes[voter].vote;
         uint oldBalance = el.votes[voter].balance;
         uint newBalance = el.token.balanceOf(voter);
         require(oldBalance != newBalance);
 
         if (newBalance > oldBalance) {
             if (block.number < el.votingEndBlockNumber) {
-                if (vote) el.yesVoteTotal += (newBalance - oldBalance);
-                else el.noVoteTotal += (newBalance - oldBalance);
+                el.votes[voter].balance = newBalance;
             }
         }
         else {
-            if (vote) el.yesVoteTotal -= (oldBalance - newBalance);
-            else el.noVoteTotal -= (oldBalance - newBalance);
+            el.votes[voter].balance = newBalance;
         }
-        el.votes[voter].balance = newBalance;
     }
     
     function changeBalance(bytes32 electionId, address voter) public {
@@ -240,3 +263,4 @@ contract ElectionSystem is IForwarder, AragonApp {
         finalNoVoteTotal = el.noVoteTotal;
     }
 }
+

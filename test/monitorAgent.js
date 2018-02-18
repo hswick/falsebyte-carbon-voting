@@ -28,6 +28,7 @@ describe('MonitoringAgent', async function () {
       let tx = await electionSystem.initializeElection(blockNumber, blockNumber+100, blockNumber+120, 'eth denver hackers voting', coloradoCoin.address, {from: accounts[0]});
 
       const result = tx.logs[1].args
+      console.log(result)
       
       electionId = result.electionId
     })
