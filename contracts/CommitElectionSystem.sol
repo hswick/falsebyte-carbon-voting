@@ -9,16 +9,15 @@ import "@aragon/os/contracts/common/IForwarder.sol";
 import "@aragon/os/contracts/lib/zeppelin/math/SafeMath.sol";
 import "@aragon/os/contracts/lib/misc/Migrations.sol";
 
-
-contract ElectionSystem is IForwarder, AragonApp {
+contract CommitElectionSystem is IForwarder, AragonApp {
 
     uint256 constant public PCT_BASE = 10 ** 18;
 
     bytes32 constant public CREATE_VOTES_ROLE = keccak256("CREATE_VOTES_ROLE");
     bytes32 constant public MODIFY_QUORUM_ROLE = keccak256("MODIFY_QUORUM_ROLE");
     
-    uint constant TALLY_PERIOD = 5;
-    uint constant REVEAL_PERIOD = 20;
+    uint constant TALLY_PERIOD = 20; // reveal and tally the votes
+    uint constant REVEAL_PERIOD = 5; // cooldown before reveal
     
     struct Vote {
 	    // address voter;
@@ -49,6 +48,7 @@ contract ElectionSystem is IForwarder, AragonApp {
     
     event StartVote(uint256 indexed voteId);
     event CastVote(uint256 indexed voteId, address indexed voter, bool supports, uint256 stake);
+    event CommitVote(uint256 indexed voteId, address indexed voter, bytes32 supports, uint256 stake);
     event ExecuteVote(uint256 indexed voteId);
     event ChangeMinQuorum(uint256 minAcceptQuorumPct);
 
@@ -177,6 +177,7 @@ contract ElectionSystem is IForwarder, AragonApp {
         // uint256 balance = 0;
         require(balance > 0);
         el.votes[msg.sender] = Vote(balance, vote);
+        CommitVote(uint(electionId), msg.sender, vote, balance);
     }
     
     function revealVote(uint electionId, bool vote, bytes32 secret) public {
@@ -189,6 +190,10 @@ contract ElectionSystem is IForwarder, AragonApp {
         if (vote) el.yesVoteTotal += balance;
         else el.noVoteTotal += balance;
         CastVote(uint(electionId), msg.sender, vote, balance);
+    }
+
+    function checkVote(bool vote, bytes32 secret) public returns (bytes32) {
+        return keccak256(vote, secret);
     }
 
     function slashVote(uint electionId, address voter, bool vote, bytes32 secret) public {
