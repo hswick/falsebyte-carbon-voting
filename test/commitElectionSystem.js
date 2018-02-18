@@ -4,6 +4,12 @@ const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
 
+function toHex(x) {
+    var str = x.toString(16)
+    while (str.length < 64) str = "0"+str
+    return "0x"+str
+}
+
 describe('CommitElectionSystem', async function () {
   this.timeout(120000)
 
@@ -38,14 +44,14 @@ describe('CommitElectionSystem', async function () {
 
     it('sends a vote', async () => {
         var hashed = web3.utils.sha3(secret2)
-      const tx = await electionSystem.sendVote(electionId, hashed, {from: accounts[1]});
+      const tx = await electionSystem.sendVote(toHex(electionId), hashed, {from: accounts[1]});
       const res = await electionSystem.checkVote.call(true, secret.toString(), {from: accounts[1]});
     })
 
     it('reveal vote', async () => {
       await mineBlocks(120)
 
-      const tx = await electionSystem.revealVote(electionId, true, secret.toString(), {from: accounts[1]})
+      const tx = await electionSystem.revealVote(toHex(electionId), true, secret.toString(), {from: accounts[1]})
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
       assert.equal(result.voter, accounts[1].toLowerCase())
@@ -57,7 +63,7 @@ describe('CommitElectionSystem', async function () {
 
       await mineBlocks(100)
 
-      const electionResults = await electionSystem.getElectionResults(electionId)
+      const electionResults = await electionSystem.getElectionResults(toHex(electionId))
       assert.equal(electionResults[0].toNumber(), 10000)
       // assert.equal(electionResults[1].toNumber(), 20000)
     })
