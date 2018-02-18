@@ -8,7 +8,7 @@ const monitoringAgent = require('../agent')()
 describe('MonitoringAgent', async function () {
   this.timeout(120000)
 
-  let electionSystem, accounts, electionId
+  let electionSystem, accounts, electionId, stopper
 
   before(async () => {
 
@@ -33,12 +33,14 @@ describe('MonitoringAgent', async function () {
       
       electionId = result.electionId
 
-      monitoringAgent({
+      let [monitorPromise, _stopper] = monitoringAgent({
         electionSystem: electionSystem, 
         erc20: coloradoCoin, 
         electionId: electionId,
         monitoringAccount: accounts[0]
       })
+
+      stopper = _stopper
     })
 
     it('sends a vote', async () => {
@@ -79,6 +81,10 @@ describe('MonitoringAgent', async function () {
       const electionResults = await electionSystem.getElectionResults(electionId)
       assert.equal(electionResults[0].toNumber(), 10000)
       assert.equal(electionResults[1].toNumber(), 20000)
+    })
+
+    it('stops monitoring agent', () => {
+      stopper()
     })
   })
 })
