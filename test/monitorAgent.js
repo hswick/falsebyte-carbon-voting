@@ -5,6 +5,12 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
 const monitoringAgent = require('../agent')()
 
+function toHex(x) {
+    var str = x.toString(16)
+    while (str.length < 64) str = "0"+str
+    return "0x"+str
+}
+
 describe('MonitoringAgent', async function () {
   this.timeout(120000)
 
@@ -29,7 +35,7 @@ describe('MonitoringAgent', async function () {
       let tx = await electionSystem.initializeElection(blockNumber, blockNumber+100, blockNumber+120, 'eth denver hackers voting', coloradoCoin.address, {from: accounts[0]});
 
       const result = tx.logs[1].args
-      console.log(result)
+      console.log(result.electionId.toString(16), result.electionId.toString(16).length, toHex(result.electionId))
       
       electionId = result.electionId
 
@@ -44,7 +50,7 @@ describe('MonitoringAgent', async function () {
     })
 
     it('sends a vote', async () => {
-      const tx = await electionSystem.sendVote(electionId, true, {from: accounts[1]});
+      const tx = await electionSystem.sendVote(toHex(electionId), true, {from: accounts[1]});
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
@@ -54,7 +60,7 @@ describe('MonitoringAgent', async function () {
 
     it('sends another vote', async () => {
 
-      let tx = await electionSystem.sendVote(electionId, false, {from: accounts[2]});
+      let tx = await electionSystem.sendVote(toHex(electionId), false, {from: accounts[2]});
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
@@ -78,7 +84,7 @@ describe('MonitoringAgent', async function () {
 
       await mineBlocks(120)
 
-      const electionResults = await electionSystem.getElectionResults(electionId)
+      const electionResults = await electionSystem.getElectionResults(toHex(electionId))
       assert.equal(electionResults[0].toNumber(), 10000)
       assert.equal(electionResults[1].toNumber(), 20000)
     })

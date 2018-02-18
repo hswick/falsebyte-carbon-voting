@@ -11,6 +11,13 @@ let coloradoCoin = ColoradoCoin.at(ColoradoCoin.address)
 
 const mineBlocks = require('./test/helpers/mineBlocks')(web3)
 
+function toHex(x) {
+    x = web3.utils.toBN(x)
+    var str = x.toString(16)
+    while (str.length < 64) str = "0"+str
+    return "0x"+str
+}
+
 const monitoringAgent = require('./agent')()
 
 const main = async () => {
@@ -59,7 +66,9 @@ const main = async () => {
     .command('vote [electionID] [voteBool] [accountNumber]')
     .description('Send vote to election')
     .action(async function (electionID, voteBool, accountNumber) {
+      console.log("here", electionID)
       const account = accounts[parseInt(accountNumber)]
+      await electionSystem.sendVote(toHex(electionID), (voteBool == 'true'), {from: account})
       await electionSystem.sendVote(web3.utils.toBN(electionID).toString(), (voteBool == 'true'), {from: account})
       console.log("Sent vote " + voteBool + " from " + account)
     })
@@ -77,7 +86,7 @@ const main = async () => {
     .command('results [electionID]')
     .description('get final results of the election')
     .action(async function(electionID) {
-      const results = await electionSystem.getElectionResults.call(web3.utils.toBN(electionID).toString())
+      const results = await electionSystem.getElectionResults.call(toHex(electionID))
       console.log("Final yes vote total: " + results[0].toNumber() + " Final no vote total: " + results[1].toNumber())
     })
 

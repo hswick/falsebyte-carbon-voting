@@ -11,6 +11,12 @@ const ACL = artifacts.require('@aragon/os/contracts/acl/ACL.sol')
 const Kernel = artifacts.require('@aragon/os/contracts/kernel/Kernel.sol')
 const ANY_ADDR = '0xffffffffffffffffffffffffffffffffffffffff'
 
+function toHex(x) {
+    var str = x.toString(16)
+    while (str.length < 64) str = "0"+str
+    return "0x"+str
+}
+
 describe('ElectionSystem', async function () {
   this.timeout(120000)
   
@@ -54,7 +60,7 @@ describe('ElectionSystem', async function () {
     })
 
     it('sends a vote', async () => {
-      const tx = await electionSystem.sendVote(electionId, true, { from: accounts[1] });
+      const tx = await electionSystem.sendVote(toHex(electionId), true, { from: accounts[1] });
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
@@ -65,7 +71,7 @@ describe('ElectionSystem', async function () {
 
     it('sends another vote', async () => {
 
-      let tx = await electionSystem.sendVote(electionId, false, { from: accounts[2] });
+      let tx = await electionSystem.sendVote(toHex(electionId), false, { from: accounts[2] });
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
@@ -79,7 +85,7 @@ describe('ElectionSystem', async function () {
 
       const result = tx.logs[0].args
 
-      await electionSystem.changeBalance(electionId, result._to, { from: accounts[3] })
+      await electionSystem.changeBalance(toHex(electionId), result._to, { from: accounts[3] })
     })
 
     it('change voter balance again', async () => {
@@ -89,14 +95,14 @@ describe('ElectionSystem', async function () {
 
       // var str = electionSystem.contract.changeBalance.getData(electionId, result._from, {from: accounts[3]})
       // console.log(str)
-      await electionSystem.changeBalance(electionId, result._from, { from: accounts[3] })
+      await electionSystem.changeBalance(toHex(electionId), result._from, { from: accounts[3] })
     })
 
     it('get final election results', async () => {
 
       await mineBlocks(120)
 
-      const electionResults = await electionSystem.getElectionResults(electionId)
+      const electionResults = await electionSystem.getElectionResults(toHex(electionId))
       assert.equal(electionResults[0].toNumber(), 10000)
       assert.equal(electionResults[1].toNumber(), 20000)
     })
