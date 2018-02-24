@@ -18,8 +18,12 @@ describe('ElectionSystem', async function () {
     accounts = await web3.eth.getAccounts()
 
     //send colorado coins to accounts
-    await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
-    await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
+    if((await coloradoCoin.balanceOf.call(accounts[1])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
+    }
+    if((await coloradoCoin.balanceOf.call(accounts[2])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
+    }
   })
 
   context('Test election system functionality', () => {

@@ -19,8 +19,12 @@ describe('MonitoringAgent', async function () {
     accounts = await web3.eth.getAccounts()
 
     //send colorado coins to accounts
-    await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
-    await coloradoCoin.transfer(accounts[2], 20000, {from: accounts[0]})
+    if((await coloradoCoin.balanceOf.call(accounts[3])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[3], 10000, { from: accounts[0] })
+    }
+    if((await coloradoCoin.balanceOf.call(accounts[4])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[4], 20000, { from: accounts[0] })
+    }
   })
 
   context('Test election system functionality with monitor', () => {
@@ -45,30 +49,30 @@ describe('MonitoringAgent', async function () {
     })
 
     it('sends a vote', async () => {
-      const tx = await electionSystem.sendVote(toHex(electionId), true, {from: accounts[1]});
+      const tx = await electionSystem.sendVote(toHex(electionId), true, {from: accounts[3]});
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
-      assert.equal(result.voter, accounts[1].toLowerCase())
+      assert.equal(result.voter, accounts[3].toLowerCase())
 
     })
 
     it('sends another vote', async () => {
 
-      let tx = await electionSystem.sendVote(toHex(electionId), false, {from: accounts[2]});
+      let tx = await electionSystem.sendVote(toHex(electionId), false, {from: accounts[4]});
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
-      assert.equal(result.voter, accounts[2].toLowerCase())
+      assert.equal(result.voter, accounts[4].toLowerCase())
 
     })
 
     it('change voter balance', async () => {
-      const tx = await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
+      const tx = await coloradoCoin.transfer(accounts[3], 10000, {from: accounts[0]})
     })
 
     it('change voter balance again', async () => {
-      const tx = await coloradoCoin.transfer(accounts[0], 10000, {from: accounts[1]})
+      const tx = await coloradoCoin.transfer(accounts[0], 10000, {from: accounts[3]})
     })
 
     it('get final election results', async () => {
