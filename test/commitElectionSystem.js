@@ -3,12 +3,7 @@ const ColoradoCoin = artifacts.require('./ColoradoCoin.sol')
 const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
-
-function toHex(x) {
-    var str = x.toString(16)
-    while (str.length < 64) str = "0"+str
-    return "0x"+str
-}
+const toHex = require('./helpers/toHex')
 
 describe('CommitElectionSystem', async function () {
   this.timeout(120000)
