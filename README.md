@@ -33,7 +33,7 @@ truffle migrate --reset
 
 # Usage
 
-You can run through an example voting scenario with these instructions. We will be using truffle exec to run our scripts.
+You can run through an example voting scenario using the cli with these instructions. We will be using truffle exec to run our scripts.
 
 ```bash
 alias run="truffle exec cli.js"
