@@ -1,5 +1,9 @@
 # FalseByte Carbon Voting
 
+This code base demonstrates a simple trustless carbon voting solution.
+
+If you want to see the repo with work towards Aragon integration check out the `aragon` branch
+
 ## Installation Instructions
 
 After cloning the repository
