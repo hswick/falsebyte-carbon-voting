@@ -1,6 +1,6 @@
 # FalseByte Carbon Voting
 
-## Installation instructions
+## Installation Instructions
 
 After cloning the repository
 
@@ -8,7 +8,6 @@ cd into the repo
 
 ```
 cd falsebyte-carbon-voting
-git clone https://github.com/mrsmkl/aragonOS
 npm install
 npm install -g truffle
 ```
@@ -23,33 +22,54 @@ Run your test net:
 ganache-cli
 ```
 
-Install modified aragonOS
+Deploy contracts to test net:
 ```
-git clone git@github.com:mrsmkl/aragonOS.git
-
-cd aragonOS
-npm install
-
-cd ..
-npm i --save-dev @aragon/os
+truffle migrate --reset
 ```
 
+# Usage
 
-```
-git clone http://github.com/aragon/aragon
-npm i
-```
+You can run through an example voting scenario with these instructions. We will be using truffle exec to run our scripts.
 
-### Running Frontend
+```bash
+alias run="truffle exec cli.js"
+
+# Begin by transferring 15000 ColoradoCoin to account 1
+
+run transfer 1 15000
+
+# Send tokens to rest of participants
+
+run transfer 2 20000
+run transfer 3 40000
+
+# Start a super important election for 100 blocks
+run election 'super important' 100
+# This will output an electionID which we will need
+
+# Start up a monitor agent in a separate tab
+run monitor *electionID*
+
+# Back in the original tab, lets send a vote
+# Account 1 will vote yes (true)
+run vote *electionID* true 1
+
+# Account 1 and 2 will attempt to collude together by getting a double vote
+# The attack requires account 1 to transfer their tokens to account 2 after voting
+run transfer-from 1 2 15000
+
+# Account 2 will now vote with 35000
+# Thus the total votes yes LOOKS like it will be 50000
+run vote *electionID* true 2
+
+# Account 3 will vote no (false)
+run vote *electionID* false 3
+
+# We will skip the waiting period
+run skip 120
+
+# We can now get the results, and see that the monitoring agent actually updated the recorded balance on the ElectionSystem contract
+run results *electionID*
+
+# If all went well, the final tally should be yes: 35000 and no: 40000
 ```
-cd aragon
-npm i
-npm start
-```
-aragon should be running on port 3000
-```
-cd app
-npm i
-npm start
-```
-app should run on port 3001
