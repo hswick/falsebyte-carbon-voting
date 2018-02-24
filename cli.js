@@ -66,10 +66,10 @@ const main = async () => {
     .command('vote [electionID] [voteBool] [accountNumber]')
     .description('Send vote to election')
     .action(async function (electionID, voteBool, accountNumber) {
-      console.log("here", electionID)
+      //console.log("here", electionID)
       const account = accounts[parseInt(accountNumber)]
       await electionSystem.sendVote(toHex(electionID), (voteBool == 'true'), {from: account})
-      await electionSystem.sendVote(web3.utils.toBN(electionID).toString(), (voteBool == 'true'), {from: account})
+      //await electionSystem.sendVote(web3.utils.toBN(electionID).toString(), (voteBool == 'true'), {from: account})
       console.log("Sent vote " + voteBool + " from " + account)
     })
 

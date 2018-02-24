@@ -3,12 +3,7 @@ const ColoradoCoin = artifacts.require('./ColoradoCoin.sol')
 const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
-
-function toHex(x) {
-    var str = x.toString(16)
-    while (str.length < 64) str = "0"+str
-    return "0x"+str
-}
+const toHex = require('./helpers/toHex')
 
 describe('CommitElectionSystem', async function () {
   this.timeout(120000)
@@ -26,9 +21,12 @@ describe('CommitElectionSystem', async function () {
     true_byte = Buffer.from("01", "hex")
 
     //send colorado coins to accounts
-    await coloradoCoin.transfer(accounts[1], 10000, {from: accounts[0]})
-    await coloradoCoin.transfer(accounts[2], 20000, {from: accounts[0]})
-    
+    if((await coloradoCoin.balanceOf.call(accounts[1])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
+    }
+    if((await coloradoCoin.balanceOf.call(accounts[2])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
+    }
   })
 
   context('Test election system functionality', () => {

@@ -3,50 +3,28 @@ const ColoradoCoin = artifacts.require('./ColoradoCoin.sol')
 const Web3 = require('web3')
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
 const mineBlocks = require('./helpers/mineBlocks')(web3)
-
-
-const DAOFactory = artifacts.require('@aragon/os/contracts/factory/DAOFactory.sol');
-const EVMScriptRegistryFactory = artifacts.require('@aragon/os/contracts/factory/EVMScriptRegistryFactory.sol')
-const ACL = artifacts.require('@aragon/os/contracts/acl/ACL.sol')
-const Kernel = artifacts.require('@aragon/os/contracts/kernel/Kernel.sol')
-const ANY_ADDR = '0xffffffffffffffffffffffffffffffffffffffff'
-
-function toHex(x) {
-    var str = x.toString(16)
-    while (str.length < 64) str = "0"+str
-    return "0x"+str
-}
+const toHex = require('./helpers/toHex')
 
 describe('ElectionSystem', async function () {
   this.timeout(120000)
   
   let electionSystem, accounts, electionId
 
-  let daoFact, kernal, acl, app, token, executionTarget = {}
-
   const votingTime = 1000;
 
   before(async () => {
-    const regFact = await EVMScriptRegistryFactory.new();
-    kernel = await Kernel.new();
-    acl = await ACL.new();
-    daoFact = await DAOFactory.new(kernel.address, acl.address, regFact.address);
     coloradoCoin = await ColoradoCoin.at(ColoradoCoin.address)
-
+    electionSystem = await ElectionSystem.at(ElectionSystem.address)
     accounts = await web3.eth.getAccounts()
 
     //send colorado coins to accounts
-    await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
-    await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
-
-    const r = await daoFact.newDAO(accounts[0])
-    const dao = Kernel.at(r.logs.filter(l => l.event == 'DeployDAO')[0].args.dao)
-    acl = ACL.at(await dao.acl())
-    
-    const receipt = await dao.newAppInstance('0x1234', (await ElectionSystem.new()).address, { from: accounts[0] })
-   
-    electionSystem = ElectionSystem.at(receipt.logs.filter(l => l.event == 'NewAppProxy')[0].args.proxy)
- })
+    if((await coloradoCoin.balanceOf.call(accounts[1])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
+    }
+    if((await coloradoCoin.balanceOf.call(accounts[2])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
+    }
+  })
 
   context('Test election system functionality', () => {
 
