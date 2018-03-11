@@ -2,7 +2,30 @@
 
 This code base demonstrates a simple trustless carbon voting solution.
 
-If you want to see the repo with work towards Aragon integration check out the `aragon` branch
+If you want to see the repo with work towards Aragon integration check out the `aragon` branch.
+
+The point of this project was to address the prblems provided by this [Aragon nest proposal](https://github.com/aragon/nest/issues/6). Which is meant to address the different tradeoffs between different token weighted voting systems. The different implementations are all centered around the Double Vote attack.
+
+The double vote attack is when two colluding parties make it seem like they collectively own more ERC20 tokens than they really do. For example, say Alice has 10000 ColoradoCoin, and Bob has 10000 ColoradoCoin. Alice votes 'yes' and records her balance of 10000 tokens. She then tries to pull a fast one and transfers all of the tokens to Bob. He also votes 'yes', but with a recorded weight of 20000 tokens. This makes it look like collectively they both voted with a total of 30000 tokens, even though they really only have 20000 tokens.
+
+Any token voting implementation must be designes in such a way to prevent this attack.
+* Token Locking:
+  - Solution: Force users to lock tokens in a contract for duration of voting period
+  - Tradeoff: Creates risk for voting system and means users have to give up their tokens for a period of time.
+* Snapshot:
+  - Solution: Take snapshots of all voter token balances at each block. MiniMe.
+  - Tradeoff: Even with optimizations done by MiniMe could have trouble scaling.
+* Carbon Voting:
+  - Solution: Voters emit an event which is counted offchain. No locking and no snapshots.
+  - Tradeoff: Results can not be used on chain.
+
+FalseByte Carbon Voting gets around all of the tradeoffs by implementing carbon voting onchain! They way it works is that voters send their votes with recorded token balances like normal. However, they can also run monitoring agents on their computer that are watching for votes and token transfers. It is assumed that since voters care about the results of their vote they are incentivized to run these agents on their computer. When a token transfer event occurs with one of the recorded voters a monitoring agent will update the recorded balance with the `changeBalance` method.
+
+There is an interesting edge case at the end of the voting period, where a voter may try to vote at close to the end of the voting period. And since there is a delay for when transactions get confirmed in blocks, it could be that the balance was not able to updated in time. In order to compensate for this we allow for a grace period where new votes are not allowed to come in, but balances are able to be updated. To prevent the issue where a voter may try to change their balance during the grace period we only allow balances to be decremented during the grace period. If a voter tries to increase their token balance during the grace period the voting contract will not record this update.
+
+<p align="center">
+  <img src="./diagram.png"/>
+</p>
 
 ## Installation Instructions
 
