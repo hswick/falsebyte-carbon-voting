@@ -24,6 +24,9 @@ describe('ElectionSystem', async function () {
     if((await coloradoCoin.balanceOf.call(accounts[2])).toNumber() == 0) {
       await coloradoCoin.transfer(accounts[2], 20000, { from: accounts[0] })
     }
+    if((await coloradoCoin.balanceOf.call(accounts[4])).toNumber() == 0) {
+      await coloradoCoin.transfer(accounts[4], 20000, { from: accounts[0] })
+    }
   })
 
   context('Test election system functionality', () => {
@@ -49,7 +52,7 @@ describe('ElectionSystem', async function () {
 
     it('sends another vote', async () => {
 
-      let tx = await electionSystem.sendVote(toHex(electionId), false, { from: accounts[2] });
+      let tx = await electionSystem.sendVote(toHex(electionId), false, { from: accounts[2] })
 
       const result = tx.logs[0].args
       assert.equal(result.voteId.toString(), electionId.toString())
@@ -58,27 +61,25 @@ describe('ElectionSystem', async function () {
 
     })
 
-    it('change voter balance', async () => {
-      const tx = await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
+    it('should try to cheat during grace period', async () => {
+      await mineBlocks(100)//Skip past end of voting period
 
-      const result = tx.logs[0].args
+      //Try to vote after voting period
+      try {
+        await electionSystem.sendVote(toHex(electionId), true, { from: accounts[4] })
+      } catch (e) {
+        assert.equal(e.message, "VM Exception while processing transaction: revert")
+      }
 
-      await electionSystem.changeBalance(toHex(electionId), result._to, { from: accounts[3] })
-    })
+      //Try to add more weight to vote during grace period
+      await coloradoCoin.transfer(accounts[1], 10000, { from: accounts[0] })
 
-    it('change voter balance again', async () => {
-      const tx = await coloradoCoin.transfer(accounts[0], 10000, { from: accounts[1] })
-
-      const result = tx.logs[0].args
-
-      // var str = electionSystem.contract.changeBalance.getData(electionId, result._from, {from: accounts[3]})
-      // console.log(str)
-      await electionSystem.changeBalance(toHex(electionId), result._from, { from: accounts[3] })
+      await electionSystem.changeBalance(toHex(electionId), accounts[1], { from: accounts[3] })
     })
 
     it('get final election results', async () => {
 
-      await mineBlocks(120)
+      await mineBlocks(20)
 
       const electionResults = await electionSystem.getElectionResults(toHex(electionId))
       assert.equal(electionResults[0].toNumber(), 10000)
