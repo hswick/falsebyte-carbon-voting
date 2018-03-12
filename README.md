@@ -2,8 +2,6 @@
 
 This code base demonstrates a simple trustless carbon voting solution.
 
-If you want to see the repo with work towards Aragon integration check out the `aragon` branch.
-
 The point of this project was to address the prblems provided by this [Aragon nest proposal](https://github.com/aragon/nest/issues/6). Which is meant to address the different tradeoffs between different token weighted voting systems. The different implementations are all centered around the Double Vote attack.
 
 The double vote attack is when two colluding parties make it seem like they collectively own more ERC20 tokens than they really do. For example, say Alice has 10000 ColoradoCoin, and Bob has 10000 ColoradoCoin. Alice votes 'yes' and records her balance of 10000 tokens. She then tries to pull a fast one and transfers all of the tokens to Bob. He also votes 'yes', but with a recorded weight of 20000 tokens. This makes it look like collectively they both voted with a total of 30000 tokens, even though they really only have 20000 tokens.
@@ -26,6 +24,16 @@ There is an interesting edge case at the end of the voting period, where a voter
 <p align="center">
   <img src="./diagram.png"/>
 </p>
+
+## Aragon Nest Deliverables
+
+1. The proposal requests an off-chain tabulation procedure because carbon voting is typically done off-chain. This is also the reason they believed that something akin to the Truebit Verification game would be appropriate. The reason we didn't take this approach is simply because of the data availability problem. Solver's can not sum up unverified data. So the data that is used must go through a verification process (see [here](https://github.com/mrsmkl/eth-patricia/wiki/Offchain-tabulation-of-votes)). Since the data has to get verified on chain anyways, it is simpler to merely do the carbon voting on chain. That is why we went with the monitoring agents that update the balance. This is a simpler solution that still met the requirements. We believe this deliverable is mostly complete.
+
+2. Integrating with AragonOS is still a work in progress. If you want to see the repo with work towards Aragon integration check out the `aragon` branch. We will most likely need additional help to work on this.
+
+3. The generalized voting interface deliverable is dependent on the specific requirements. However, we have shown an example of a commit reveal approach that follows the same approach. There may need to be a few modifications needed, but we think it should be straight forward to extend our work using inheritance or composition.
+
+
 
 ## Installation Instructions
 
