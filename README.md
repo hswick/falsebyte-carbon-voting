@@ -1,39 +1,32 @@
 # FalseByte Carbon Voting
 
-This code base demonstrates a simple trustless carbon voting solution.
+FalseByte Carbon Voting demonstrates a simple trustless carbon voting solution.
 
-The point of this project was to address the prblems provided by this [Aragon nest proposal](https://github.com/aragon/nest/issues/6). Which is meant to address the different tradeoffs between different token weighted voting systems. The different implementations are all centered around the Double Vote attack.
+Work towards the Aragon integration can be found in the `aragon` branch.
 
-The double vote attack is when two colluding parties make it seem like they collectively own more ERC20 tokens than they really do. For example, say Alice has 10000 ColoradoCoin, and Bob has 10000 ColoradoCoin. Alice votes 'yes' and records her balance of 10000 tokens. She then tries to pull a fast one and transfers all of the tokens to Bob. He also votes 'yes', but with a recorded weight of 20000 tokens. This makes it look like collectively they both voted with a total of 30000 tokens, even though they really only have 20000 tokens.
+The Carbon Voting Project addresses the issues detailed here [Aragon nest proposal](https://github.com/aragon/nest/issues/6). We specifically solve for the current tradeoffs between different token weighted voting systems as relates to the Double Vote attack.
 
-Any token voting implementation must be designes in such a way to prevent this attack.
+Double Vote Attack: Two colluding parties collectively increase the weight of their vote by making it appear they have more ERC20 tokens than they really do. For example, assume Alice has 10,000 ColoradoCoin, and Bob has 10,000 ColoradoCoin.  During a vote, Alice votes 'yes' and records her balance of 10,000 tokens. She then transfers all of the tokens to Bob with the intent to cheat. Bob also votes 'yes', but with a recorded weight of 20,000 tokens. As a result, they have collectively voted with a total of 30,000 tokens despite having only 20,000 between the pair.
+
+Any token voting implementation must be designed in such a way to prevent this attack.
 * Token Locking:
   - Solution: Force users to lock tokens in a contract for duration of voting period
   - Tradeoff: Creates risk for voting system and means users have to give up their tokens for a period of time.
 * Snapshot:
   - Solution: Take snapshots of all voter token balances at each block. MiniMe.
-  - Tradeoff: Even with optimizations done by MiniMe could have trouble scaling.
+  - Tradeoff: Even with optimizations done by MiniMe could have trouble scaling.  (add more detail here around why this is a problem)
 * Carbon Voting:
   - Solution: Voters emit an event which is counted offchain. No locking and no snapshots.
   - Tradeoff: Results can not be used on chain.
+  - Aragon has requested implementing Carbon Voting On-chain - this is the goal of the Falsebyte Carbon Voting Project
 
-FalseByte Carbon Voting gets around all of the tradeoffs by implementing carbon voting onchain! They way it works is that voters send their votes with recorded token balances like normal. However, they can also run monitoring agents on their computer that are watching for votes and token transfers. It is assumed that since voters care about the results of their vote they are incentivized to run these agents on their computer. When a token transfer event occurs with one of the recorded voters a monitoring agent will update the recorded balance with the `changeBalance` method.
+FalseByte Carbon Voting gets around all of the tradeoffs listed above by implementing carbon voting onchain! Voters still send their votes with recorded token balances, however, they can also run monitoring agents locally that are watching for votes and token transfers. Since voters care about the results of their vote, they are incentivized to run these agents locally. When a token transfer event occurs with one of the recorded voters, a monitoring agent will update the recorded balance with the `changeBalance` method.  (explain what this achieves in more detail -- maybe a nice example here of how this works specifically .... Alice sends to Bob, monitoring agent sees and notes in x contract...etc.)
 
-There is an interesting edge case at the end of the voting period, where a voter may try to vote at close to the end of the voting period. And since there is a delay for when transactions get confirmed in blocks, it could be that the balance was not able to updated in time. In order to compensate for this we allow for a grace period where new votes are not allowed to come in, but balances are able to be updated. To prevent the issue where a voter may try to change their balance during the grace period we only allow balances to be decremented during the grace period. If a voter tries to increase their token balance during the grace period the voting contract will not record this update.
+There is an interesting edge case at the end of the voting period where a voter may try to vote during the final block(s). Since there is a delay for transaction confirmation, we need to account for balances thay are not updated in real time. To compensate, we allow for a grace period where new votes are blocked, but balances are still updated. To prevent voter's from changing their balance during the grace period we only allow balances to be decremented during this time. If a voter tries to increase their token balance during the grace period the voting contract will not record this update.
 
 <p align="center">
   <img src="./diagram.png"/>
 </p>
-
-## Aragon Nest Deliverables
-
-1. The proposal requests an off-chain tabulation procedure because carbon voting is typically done off-chain. This is also the reason they believed that something akin to the Truebit Verification game would be appropriate. The reason we didn't take this approach is simply because of the data availability problem. Solver's can not sum up unverified data. So the data that is used must go through a verification process (see [here](https://github.com/mrsmkl/eth-patricia/wiki/Offchain-tabulation-of-votes)). Since the data has to get verified on chain anyways, it is simpler to merely do the carbon voting on chain. That is why we went with the monitoring agents that update the balance. This is a simpler solution that still met the requirements. We believe this deliverable is mostly complete.
-
-2. Integrating with AragonOS is still a work in progress. If you want to see the repo with work towards Aragon integration check out the `aragon` branch. We will most likely need additional help to work on this.
-
-3. The generalized voting interface deliverable is dependent on the specific requirements. However, we have shown an example of a commit reveal approach that follows the same approach. There may need to be a few modifications needed, but we think it should be straight forward to extend our work using inheritance or composition.
-
-
 
 ## Installation Instructions
 
@@ -108,3 +101,4 @@ run results *electionID*
 
 # If all went well, the final tally should be yes: 35000 and no: 40000
 ```
+(add a description here about what happened above in plain text .. ie. The program above demonstrates xx yyy)
