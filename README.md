@@ -14,7 +14,7 @@ Any token voting implementation must be designed in such a way to prevent this a
   - Tradeoff: Creates risk for voting system and means users have to give up their tokens for a period of time.
 * Snapshot:
   - Solution: Take snapshots of all voter token balances at each block. MiniMe.
-  - Tradeoff: Even with optimizations done by MiniMe could have trouble scaling. In the case of there being a lot of voters who are changing their token balances a lot, there would be a lot of data being stored in the MiniMe snapshots. Also transferring MiniMe tokens costs about 2x more than a regular ERC20 token. 
+  - Tradeoff: Users are forced to wrap their tokens in another token. Even with optimizations, MiniMe can still have trouble scaling. If there was a case with voters changing their votes a lot, then there would be a lot of data to be stored for each snapshot. Also, transferring MiniMe tokens costs about 2x more than a regular ERC20 token. 
 * Carbon Voting:
   - Solution: Voters emit an event which is counted offchain. No locking and no snapshots.
   - Tradeoff: Results can not be used on chain.
